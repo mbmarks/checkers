@@ -66,8 +66,18 @@ function handleClick(row, col) {
 
         // If clicking empty dark square, move
         if (isValidMove(selected.row, selected.col, row, col, piece)) {
-            board[row][col] = board[selected.row][selected.col]; // move piece
-            board[selected.row][selected.col] = 0; // clear old spot
+
+            // move piece
+            board[row][col] = piece;
+            board[selected.row][selected.col] = 0;
+
+            // check if capture happened
+            if (Math.abs(row - selected.row) === 2) {
+                const midRow = (row + selected.row) / 2;
+                const midCol = (col + selected.col) / 2;
+                board[midRow][midCol] = 0; // remove captured piece
+            }
+            
             selected = null; // reset
             drawBoard();
             return;
@@ -77,7 +87,7 @@ function handleClick(row, col) {
             selected = null;
             drawBoard();
             return;
-    }
+        }
     } 
 
     // Select piece if square has one
@@ -96,16 +106,22 @@ function isValidMove(fromRow, fromCol, toRow, toCol, piece) {
     const rowDiff = toRow - fromRow;
     const colDiff = Math.abs(toCol - fromCol);
 
-    // only move 1 diagonal
-    if (colDiff !== 1) return false;
-
-    if (piece === 1) { 
-    // red moves downward (increasing row)
-    return rowDiff === 1;
-    } else if (piece === 2) {
-    // black moves upward (decreasing row)
-    return rowDiff === -1;
+    // Regular one-step diagonal move
+    if (Math.abs(colDiff) === 1) {
+        if (piece === 1 && rowDiff === 1) return true; // red moves down
+        if (piece === 2 && rowDiff === -1) return true; // black moves up
     }
+
+    // Capture move (jump)
+    if (Math.abs(colDiff) === 2) {
+        const midRow = (fromRow + toRow) / 2;
+        const midCol = (fromCol + toCol) / 2;
+        const middlePiece = board[midRow][midCol];
+
+        if (piece === 1 && rowDiff === 2 && middlePiece === 2) return true; // red jumps black
+        if (piece === 2 && rowDiff === -2 && middlePiece === 1) return true; // black jumps red
+    }
+
     return false;
 }
 
