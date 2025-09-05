@@ -1,3 +1,6 @@
+// 0 is empty
+// 1 is red
+// 2 is black
 let board = [
       [0,1,0,1,0,1,0,1],
       [1,0,1,0,1,0,1,0],
@@ -58,19 +61,22 @@ function drawBoard() {
 
 function handleClick(row, col) {
     if (selected) {
-    // If clicking empty dark square, move
-    if (board[row][col] === 0 && (row + col) % 2 === 1) {
-        board[row][col] = board[selected.row][selected.col]; // move piece
-        board[selected.row][selected.col] = 0; // clear old spot
-        selected = null; // reset
-        drawBoard();
-        return;
-    }
-    // If clicked same piece, deselect
-    if (selected.row === row && selected.col === col) {
-        selected = null;
-        drawBoard();
-        return;
+        
+        const piece = board[selected.row][selected.col]
+
+        // If clicking empty dark square, move
+        if (isValidMove(selected.row, selected.col, row, col, piece)) {
+            board[row][col] = board[selected.row][selected.col]; // move piece
+            board[selected.row][selected.col] = 0; // clear old spot
+            selected = null; // reset
+            drawBoard();
+            return;
+        }
+        // If clicked same piece, deselect
+        if (selected.row === row && selected.col === col) {
+            selected = null;
+            drawBoard();
+            return;
     }
     } 
 
@@ -79,6 +85,28 @@ function handleClick(row, col) {
     selected = { row, col };
     drawBoard();
     }
+}
+
+function isValidMove(fromRow, fromCol, toRow, toCol, piece) {
+    // must be empty dark square
+    if (board[toRow][toCol] !== 0 || (toRow + toCol) % 2 === 0) {
+        return false;
+    }
+
+    const rowDiff = toRow - fromRow;
+    const colDiff = Math.abs(toCol - fromCol);
+
+    // only move 1 diagonal
+    if (colDiff !== 1) return false;
+
+    if (piece === 1) { 
+    // red moves downward (increasing row)
+    return rowDiff === 1;
+    } else if (piece === 2) {
+    // black moves upward (decreasing row)
+    return rowDiff === -1;
+    }
+    return false;
 }
 
 drawBoard()
