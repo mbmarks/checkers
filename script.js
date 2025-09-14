@@ -2,15 +2,15 @@
 // 1 is red
 // 2 is black
 let board = [
-      [0,1,0,1,0,1,0,1],
-      [1,0,1,0,1,0,1,0],
-      [0,1,0,1,0,1,0,1],
-      [0,0,0,0,0,0,0,0],
-      [0,0,0,0,0,0,0,0],
-      [2,0,2,0,2,0,2,0],
-      [0,2,0,2,0,2,0,2],
-      [2,0,2,0,2,0,2,0]
-    ];
+    [0, 1, 0, 1, 0, 1, 0, 1],
+    [1, 0, 1, 0, 1, 0, 1, 0],
+    [0, 1, 0, 1, 0, 1, 0, 1],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [2, 0, 2, 0, 2, 0, 2, 0],
+    [0, 2, 0, 2, 0, 2, 0, 2],
+    [2, 0, 2, 0, 2, 0, 2, 0]
+];
 
 const boardEl = document.getElementById("board");
 
@@ -34,24 +34,35 @@ function drawBoard() {
                 square.classList.add("dark");
             }
 
-            if (board[row][col] === 1) {
+            const pieceType = board[row][col]
+            if (pieceType === 1 || pieceType === 2) {
                 const piece = document.createElement("div");
-                piece.classList.add("piece", "red");
+                piece.classList.add("piece", pieceType === 1 ? "red" : "black");
                 if (selected && selected.row == row && selected.col == col) {
                     piece.classList.add("selected");
                 }
-                square.appendChild(piece);
-            } else if (board[row][col] === 2) {
-                const piece = document.createElement("div");
-                piece.classList.add("piece", "black");
-                if (selected && selected.row == row && selected.col == col) {
-                    piece.classList.add("selected");
-                }
+
+                // make draggable
+                piece.draggable = true;
+                piece.addEventListener("dragstart", (e) => {
+                    dragSource = { row, col };
+                    e.dataTransfer.setData("text/plain", `${row},${col}`);
+                });
+
                 square.appendChild(piece);
             }
 
             // Add click handler
             square.addEventListener("click", () => handleClick(row, col));
+
+            square.addEventListener("dragover", (e) => e.preventDefault());
+
+            square.addEventListener("drop", (e) => {
+                e.preventDefault();
+                if (!dragSource) return;
+                attemptMove(dragSource.row, dragSource.col, row, col);
+                dragSource = null;
+            });
 
             boardEl.appendChild(square);
         }
@@ -61,7 +72,7 @@ function drawBoard() {
 
 function handleClick(row, col) {
     if (selected) {
-        
+
         const piece = board[selected.row][selected.col]
 
         // If clicking empty dark square, move
@@ -77,7 +88,7 @@ function handleClick(row, col) {
                 const midCol = (col + selected.col) / 2;
                 board[midRow][midCol] = 0; // remove captured piece
             }
-            
+
             selected = null; // reset
             drawBoard();
             return;
@@ -88,13 +99,32 @@ function handleClick(row, col) {
             drawBoard();
             return;
         }
-    } 
+    }
 
     // Select piece if square has one
     if (board[row][col] !== 0) {
-    selected = { row, col };
-    drawBoard();
+        selected = { row, col };
+        drawBoard();
     }
+}
+
+function attemptMove(fromRow, fromCol, toRow, toCol) {
+    const piece = board[fromRow][fromCol];
+    if (isValidMove(fromRow, fromCol, toRow, toCol, piece)) {
+        board[toRow][toCol] = piece;
+        board[fromRow][fromCol] = 0;
+
+        // capture
+        if (Math.abs(toRow - fromRow) === 2) {
+            const midRow = (fromRow + toRow) / 2;
+            const midCol = (fromCol + toCol) / 2;
+            board[midRow][midCol] = 0;
+        }
+
+        drawBoard();
+        return true;
+    }
+    return false;
 }
 
 function isValidMove(fromRow, fromCol, toRow, toCol, piece) {
